@@ -1,0 +1,510 @@
+/* =========================================================
+   A.E.G.I.S. BASE
+========================================================= */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0f1d;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 4px;
+}
+
+body {
+    background: #0a0f1d;
+}
+
+
+/* =========================================================
+   CARDS
+========================================================= */
+
+.sensor-card,
+.stat-card,
+.panel {
+    background: #12192f;
+    border: 1px solid #1e293b;
+    border-radius: 16px;
+}
+
+.sensor-card {
+    padding: 16px;
+    transition: .25s ease;
+}
+
+.sensor-card:hover,
+.stat-card:hover {
+    border-color: #334155;
+    transform: translateY(-1px);
+}
+
+.card-label {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.sensor-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 21px;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.panel {
+    padding: 20px;
+}
+
+.panel-title {
+    color: #e2e8f0;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.stat-card {
+    padding: 16px;
+}
+
+.stat-title {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.stat-value {
+    color: #f8fafc;
+    font-size: 27px;
+    font-weight: 900;
+    margin-top: 8px;
+}
+
+.stat-badge {
+    color: #64748b;
+    font-size: 10px;
+    margin-top: 4px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   CHART
+========================================================= */
+
+.chart-box {
+    height: 75px;
+    margin-top: 8px;
+}
+
+
+/* =========================================================
+   RADAR
+========================================================= */
+
+#radarCanvas {
+    background-color: #0a0f1d;
+    background-image:
+        radial-gradient(
+            circle,
+            rgba(16,185,129,.1) 1px,
+            transparent 1px
+        );
+
+    background-size: 20px 20px;
+    border-radius: 50%;
+    border: 1px solid #1e293b;
+    max-width: 100%;
+}
+
+
+/* =========================================================
+   SOUND
+========================================================= */
+
+.sound-canvas {
+    width: 100%;
+    height: 112px;
+    background: #0a0f1d;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   METRIC
+========================================================= */
+
+.metric-box {
+    background: #0a0f1d;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #1e293b;
+}
+
+
+/* =========================================================
+   GPS
+========================================================= */
+
+.gps-map {
+    min-height: 310px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #1e293b;
+    background: #0a0f1d;
+}
+
+.gps-data {
+    background: #0a0f1d;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 16px;
+    display: grid;
+    align-content: center;
+    gap: 18px;
+}
+
+.gps-data div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gps-data span {
+    font-size: 10px;
+    color: #64748b;
+    font-weight: 800;
+    letter-spacing: .1em;
+}
+
+.gps-data strong {
+    color: #e2e8f0;
+    font-family: monospace;
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   SIMULATION BUTTON
+========================================================= */
+
+.sim-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    background: #7c3aed;
+    color: white;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: .2s ease;
+}
+
+.sim-btn:hover {
+    background: #8b5cf6;
+}
+
+.sim-btn.running {
+    background: #dc2626;
+}
+
+
+/* =========================================================
+   CONSOLE
+========================================================= */
+
+.console-box {
+    height: 155px;
+    overflow-y: auto;
+    background: #0a0f1d;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 12px;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+.clear-btn {
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   ACOUSTIC RECOGNITION
+========================================================= */
+
+.recognition-status {
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+
+/* EVENT CARD */
+
+.event-card {
+    min-height: 135px;
+    padding: 18px;
+    border-radius: 14px;
+    background: #0a0f1d;
+    border: 1px solid #1e293b;
+
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    transition: .25s ease;
+}
+
+.event-card:hover {
+    border-color: #475569;
+    transform: translateY(-2px);
+}
+
+
+.event-card.detected {
+    border-color: #f43f5e;
+    box-shadow: 0 0 25px rgba(244,63,94,.15);
+}
+
+
+.event-icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 22px;
+
+    background: #1e293b;
+}
+
+
+.animal-icon {
+    color: #34d399;
+}
+
+.gunshot-icon {
+    color: #fb7185;
+}
+
+.cutting-icon {
+    color: #fbbf24;
+}
+
+.falling-icon {
+    color: #60a5fa;
+}
+
+
+.event-title {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .06em;
+}
+
+
+.event-status {
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 900;
+    margin-top: 4px;
+}
+
+
+.event-card.detected .event-status {
+    color: #fb7185;
+}
+
+
+.event-confidence {
+    color: #64748b;
+    font-size: 10px;
+    margin-top: 5px;
+}
+
+
+/* =========================================================
+   CURRENT DETECTION
+========================================================= */
+
+.current-detection {
+    background: #0a0f1d;
+    border: 1px solid #1e293b;
+    border-radius: 14px;
+    padding: 18px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+}
+
+
+/* =========================================================
+   ANIMAL COMPATIBILITY
+========================================================= */
+
+.animal-safe,
+.animal-danger {
+    position: relative;
+    min-height: 125px;
+    border-radius: 12px;
+    padding: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    transition: .3s ease;
+}
+
+.animal-safe {
+    border: 1px solid rgba(16,185,129,.3);
+    background: linear-gradient(
+        135deg,
+        rgba(6,78,59,.35),
+        #0a0f1d
+    );
+}
+
+.animal-danger {
+    border: 1px solid rgba(244,63,94,.65);
+    background: linear-gradient(
+        135deg,
+        rgba(136,19,55,.45),
+        #0a0f1d
+    );
+}
+
+.animal-bulb {
+    width: 50px;
+    height: 50px;
+
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(16,185,129,.12);
+
+    border: 2px solid #10b981;
+
+    font-size: 21px;
+}
+
+.animal-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    border-radius: 999px;
+    padding: 6px 10px;
+
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.animal-badge.safe {
+    color: #34d399;
+    background: rgba(16,185,129,.12);
+    border: 1px solid rgba(16,185,129,.4);
+}
+
+.animal-badge.danger {
+    color: #fb7185;
+    background: rgba(244,63,94,.12);
+    border: 1px solid rgba(244,63,94,.5);
+}
+
+.animal-badge span:first-child {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #10b981;
+}
+
+.animal-badge.danger span:first-child {
+    background: #f43f5e;
+    animation: pulse 1s infinite;
+}
+
+
+/* =========================================================
+   LEAFLET
+========================================================= */
+
+.leaflet-container {
+    background: #0a0f1d;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+
+    .animal-safe,
+    .animal-danger {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .gps-map {
+        min-height: 250px;
+    }
+
+    .current-detection {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+}
