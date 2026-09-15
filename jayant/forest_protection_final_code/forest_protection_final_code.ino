@@ -22,9 +22,6 @@
 // MQ2 Gas Sensor
 #define MQ2_PIN A0
 
-// Microphone
-#define MIC_ANALOG_PIN A1
-
 // Buzzer
 #define BUZZER_PIN A5
 
@@ -217,13 +214,6 @@ void sendTelemetry() {
 
   int gasVal =
     analogRead(MQ2_PIN);
-
-  // -----------------------------
-  // MICROPHONE
-  // -----------------------------
-
-  int micVal =
-    analogRead(MIC_ANALOG_PIN);
 
   // =================================================
   // ULTRASONIC
