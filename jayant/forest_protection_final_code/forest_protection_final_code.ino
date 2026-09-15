@@ -1,67 +1,52 @@
-/*
-   ================================================
-   ENVIRONMENTAL SOUND MONITORING SYSTEM
-   Arduino UNO
-   ================================================
-
-   Sound events supported by the dashboard:
-
-   1. ANIMAL_HUNTING
-   2. GUNSHOT_SOUND
-   3. TREE_CUTTING_MACHINE
-   4. FALLING_TREE
-
-   Hardware:
-   - Arduino UNO
-   - Analog Sound Sensor / Microphone
-   - LED
-   - Buzzer
-
-   Connections:
-   Sound Sensor AO -> A0
-   Sound Sensor VCC -> 5V
-   Sound Sensor GND -> GND
-
-   LED:
-   LED + -> D13
-   LED - -> GND
-
-   Buzzer:
-   Buzzer + -> D8
-   Buzzer - -> GND
-*/
+#include <SoftwareSerial.h>
+#include <DHT.h>
 
 // =================================================
 // PIN DEFINITIONS
 // =================================================
 
-const int SOUND_SENSOR_PIN = A0;
-const int LED_PIN = 13;
-const int BUZZER_PIN = 8;
+// Ultrasonic
+#define TRIG_PIN 6
+#define ECHO_PIN 7
 
+// DHT11
+#define DHT_PIN 9
+#define DHT_TYPE DHT11
+
+// PIR
+#define PIR_PIN A2
+
+// Flame
+#define FLAME_PIN A3
+
+// MQ2 Gas Sensor
+#define MQ2_PIN A0
+
+// Microphone
+#define MIC_ANALOG_PIN A1
+
+// Buzzer
+#define BUZZER_PIN A5
 
 // =================================================
-// SETTINGS
+// DHT11
 // =================================================
 
-// Change this value according to your sound sensor
-const int SOUND_THRESHOLD = 600;
-
-// Very loud sound threshold
-const int VERY_LOUD_THRESHOLD = 850;
-
-// Time between two events
-const unsigned long EVENT_COOLDOWN = 3000;
-
+DHT dht(DHT_PIN, DHT_TYPE);
 
 // =================================================
-// VARIABLES
+// ELECHOUSE V3.1
+// Module TX -> Arduino D2
+// Module RX -> Arduino D3
 // =================================================
 
-unsigned long lastEventTime = 0;
+SoftwareSerial voice(2, 3);
 
-int soundValue = 0;
+// =================================================
+// TIMER
+// =================================================
 
+unsigned long startTime = 0;
 
 // =================================================
 // SETUP
@@ -69,28 +54,42 @@ int soundValue = 0;
 
 void setup() {
 
-  // Start Serial communication
   Serial.begin(9600);
+  voice.begin(9600);
 
-  // Pin modes
-  pinMode(SOUND_SENSOR_PIN, INPUT);
-  pinMode(LED_PIN, OUTPUT);
+  startTime = millis();
+
+  // Ultrasonic
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  // PIR
+  pinMode(PIR_PIN, INPUT);
+
+  // Flame
+  pinMode(FLAME_PIN, INPUT);
+
+  // Buzzer
   pinMode(BUZZER_PIN, OUTPUT);
 
-  // Initial state
-  digitalWrite(LED_PIN, LOW);
-  digitalWrite(BUZZER_PIN, LOW);
+  // DHT11
+  dht.begin();
 
-  delay(1000);
-
-  // Tell JavaScript that Arduino is ready
-  Serial.println("SYSTEM_READY");
-
-  delay(500);
-
-  Serial.println("SOUND_MONITOR_STARTED");
+  Serial.println();
+  Serial.println("================================");
+  Serial.println("A.E.G.I.S. FOREST PROTECTION");
+  Serial.println("================================");
+  Serial.println("DHT11 READY");
+  Serial.println("PIR READY");
+  Serial.println("FLAME SENSOR READY");
+  Serial.println("MQ2 READY");
+  Serial.println("ULTRASONIC READY");
+  Serial.println("MICROPHONE READY");
+  Serial.println("ELECHOUSE VOICE V3.1 READY");
+  Serial.println("SD CARD REMOVED");
+  Serial.println("Waiting for commands...");
+  Serial.println();
 }
-
 
 // =================================================
 // MAIN LOOP
@@ -98,213 +97,239 @@ void setup() {
 
 void loop() {
 
-  // Read sound sensor
-  soundValue = analogRead(SOUND_SENSOR_PIN);
+  // -------------------------------------------------
+  // COMPUTER COMMANDS
+  // -------------------------------------------------
 
+  if (Serial.available()) {
 
-  // ------------------------------------------------
-  // SEND SOUND LEVEL TO JAVASCRIPT
-  // ------------------------------------------------
+    String cmd = Serial.readStringUntil('\n');
 
-  Serial.print("SOUND_LEVEL:");
-  Serial.println(soundValue);
+    cmd.trim();
 
-
-  // ------------------------------------------------
-  // CHECK FOR SOUND
-  // ------------------------------------------------
-
-  if (soundValue >= SOUND_THRESHOLD) {
-
-    // Check cooldown
-    if (millis() - lastEventTime >= EVENT_COOLDOWN) {
-
-      detectSound(soundValue);
-
-      lastEventTime = millis();
-    }
+    handleIncomingCommand(cmd);
   }
 
+  // -------------------------------------------------
+  // VOICE MODULE
+  // -------------------------------------------------
 
-  delay(100);
+  checkVoiceRecognition();
+
+  // -------------------------------------------------
+  // SENSOR TELEMETRY
+  // -------------------------------------------------
+
+  static unsigned long lastStreamTime = 0;
+
+  if (millis() - lastStreamTime >= 1000) {
+
+    lastStreamTime = millis();
+
+    sendTelemetry();
+  }
 }
 
+// =================================================
+// VOICE RECOGNITION
+// =================================================
+
+void checkVoiceRecognition() {
+
+  if (voice.available()) {
+
+    int data = voice.read();
+
+    unsigned long seconds =
+      (millis() - startTime) / 1000;
+
+    int hours = seconds / 3600;
+
+    int minutes =
+      (seconds % 3600) / 60;
+
+    int secs =
+      seconds % 60;
+
+    Serial.print("VOICE RECEIVED AT ");
+
+    if (hours < 10)
+      Serial.print("0");
+
+    Serial.print(hours);
+    Serial.print(":");
+
+    if (minutes < 10)
+      Serial.print("0");
+
+    Serial.print(minutes);
+    Serial.print(":");
+
+    if (secs < 10)
+      Serial.print("0");
+
+    Serial.print(secs);
+
+    Serial.print(" -> DATA: ");
+
+    Serial.println(data);
+
+    tone(BUZZER_PIN, 1000, 100);
+  }
+}
 
 // =================================================
-// SOUND DETECTION
+// SENSOR TELEMETRY
 // =================================================
 
-void detectSound(int value) {
+void sendTelemetry() {
 
-  /*
-     IMPORTANT:
+  // -----------------------------
+  // PIR
+  // -----------------------------
 
-     The following thresholds are ONLY for testing.
+  bool pirMotion =
+    (digitalRead(PIR_PIN) == HIGH);
 
-     A normal analog sound sensor does NOT know
-     what type of sound it is hearing.
+  // -----------------------------
+  // FLAME
+  // -----------------------------
 
-     For actual classification, replace this function
-     with the result from your audio/ML classifier.
-  */
+  bool flameDetected =
+    (digitalRead(FLAME_PIN) == LOW);
 
+  // -----------------------------
+  // MQ2
+  // -----------------------------
 
-  if (value >= VERY_LOUD_THRESHOLD) {
+  int gasVal =
+    analogRead(MQ2_PIN);
 
-    // Very loud sound
-    sendEvent(
-      "GUNSHOT_SOUND",
-      0.90
-    );
+  // -----------------------------
+  // MICROPHONE
+  // -----------------------------
 
+  int micVal =
+    analogRead(MIC_ANALOG_PIN);
+
+  // -----------------------------
+  // DHT11
+  // -----------------------------
+
+  float temperature =
+    dht.readTemperature();
+
+  float humidity =
+    dht.readHumidity();
+
+  if (isnan(temperature) || isnan(humidity)) {
+
+    Serial.println("DHT ERROR");
+
+    temperature = -1;
+    humidity = -1;
   }
 
-  else if (value >= 750) {
+  // -----------------------------
+  // ULTRASONIC
+  // -----------------------------
 
-    // High sound
-    sendEvent(
-      "TREE_CUTTING_MACHINE",
-      0.85
-    );
+  digitalWrite(TRIG_PIN, LOW);
 
+  delayMicroseconds(2);
+
+  digitalWrite(TRIG_PIN, HIGH);
+
+  delayMicroseconds(10);
+
+  digitalWrite(TRIG_PIN, LOW);
+
+  long duration =
+    pulseIn(ECHO_PIN, HIGH, 20000);
+
+  int distanceCm;
+
+  if (duration == 0) {
+
+    distanceCm = 999;
+
+  } else {
+
+    distanceCm =
+      duration * 0.034 / 2;
   }
 
-  else if (value >= 650) {
+  // =================================================
+  // MACHINE-READABLE TELEMETRY
+  // =================================================
 
-    // Medium-high sound
-    sendEvent(
-      "FALLING_TREE",
-      0.80
-    );
+  Serial.print("TELEMETRY:");
 
+  Serial.print(",PIR:");
+  Serial.print(
+    pirMotion ? "MOTION" : "CLEAR"
+  );
+
+  Serial.print(",FLAME:");
+  Serial.print(
+    flameDetected ? "FIRE" : "CLEAR"
+  );
+
+  Serial.print(",GAS:");
+  Serial.print(gasVal);
+
+  Serial.print(",MIC:");
+  Serial.print(micVal);
+
+  Serial.print(",DIST:");
+  Serial.print(distanceCm);
+
+  Serial.print(",TEMP:");
+  Serial.print(temperature, 1);
+
+  Serial.print(",HUM:");
+  Serial.print(humidity, 1);
+
+  Serial.println();
+}
+
+// =================================================
+// COMPUTER COMMANDS
+// =================================================
+
+void handleIncomingCommand(String cmd) {
+
+  if (cmd == "TEST_BUZZER") {
+
+    tone(BUZZER_PIN, 1000, 500);
+
+    Serial.println("BUZZER TEST");
+  }
+
+  else if (cmd == "READ_SENSORS") {
+
+    sendTelemetry();
+  }
+
+  else if (cmd == "VOICE_TEST") {
+
+    Serial.println("VOICE MODULE TEST");
+
+    tone(BUZZER_PIN, 1500, 200);
+  }
+
+  else if (cmd == "MIC_TEST") {
+
+    int micValue =
+      analogRead(MIC_ANALOG_PIN);
+
+    Serial.print("MIC:");
+    Serial.println(micValue);
   }
 
   else {
 
-    // Lower detected sound
-    sendEvent(
-      "ANIMAL_HUNTING",
-      0.75
-    );
-  }
-}
-
-
-// =================================================
-// SEND EVENT
-// =================================================
-
-void sendEvent(String eventName, float confidence) {
-
-  // Turn ON LED
-  digitalWrite(LED_PIN, HIGH);
-
-
-  // ------------------------------------------------
-  // SEND EVENT TO JAVASCRIPT
-  //
-  // Format:
-  //
-  // EVENT:EVENT_NAME:CONFIDENCE
-  // ------------------------------------------------
-
-  Serial.print("EVENT:");
-  Serial.print(eventName);
-  Serial.print(":");
-  Serial.println(confidence, 2);
-
-
-  // ------------------------------------------------
-  // SEND EVENT MESSAGE
-  // ------------------------------------------------
-
-  Serial.print("DETECTED:");
-  Serial.println(eventName);
-
-
-  // ------------------------------------------------
-  // BUZZER ALERT
-  // ------------------------------------------------
-
-  digitalWrite(BUZZER_PIN, HIGH);
-
-  delay(250);
-
-  digitalWrite(BUZZER_PIN, LOW);
-
-
-  // Keep LED on briefly
-  delay(250);
-
-  digitalWrite(LED_PIN, LOW);
-}
-
-
-// =================================================
-// OPTIONAL TEST COMMANDS
-// =================================================
-
-/*
-   You can type commands into the Serial Monitor
-   to test the dashboard without making sounds.
-
-   Commands:
-
-   animal
-   gunshot
-   cutting
-   falling
-   test
-*/
-
-void checkSerialCommand() {
-
-  if (Serial.available()) {
-
-    String command = Serial.readStringUntil('\n');
-
-    command.trim();
-
-
-    if (command == "animal") {
-
-      sendEvent(
-        "ANIMAL_HUNTING",
-        0.95
-      );
-    }
-
-
-    else if (command == "gunshot") {
-
-      sendEvent(
-        "GUNSHOT_SOUND",
-        0.95
-      );
-    }
-
-
-    else if (command == "cutting") {
-
-      sendEvent(
-        "TREE_CUTTING_MACHINE",
-        0.95
-      );
-    }
-
-
-    else if (command == "falling") {
-
-      sendEvent(
-        "FALLING_TREE",
-        0.95
-      );
-    }
-
-
-    else if (command == "test") {
-
-      Serial.println("TEST_OK");
-    }
+    Serial.print("UNKNOWN COMMAND: ");
+    Serial.println(cmd);
   }
 }
