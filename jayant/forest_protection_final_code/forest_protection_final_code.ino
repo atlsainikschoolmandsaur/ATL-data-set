@@ -26,9 +26,6 @@
 // Microphone
 #define MIC_ANALOG_PIN A1
 
-// Buzzer
-#define BUZZER_PIN A5
-
 // =================================================
 // DHT11
 // =================================================
@@ -48,10 +45,6 @@ SoftwareSerial voice(2, 3);
 // =================================================
 
 unsigned long startTime = 0;
-unsigned long lastBuzzerTime = 0;
-
-// Microphone threshold
-#define MIC_THRESHOLD 600
 
 // =================================================
 // SETUP
@@ -74,10 +67,6 @@ void setup() {
   // Flame
   pinMode(FLAME_PIN, INPUT);
 
-  // Buzzer
-  pinMode(BUZZER_PIN, OUTPUT);
-  noTone(BUZZER_PIN);
-
   // DHT11
   dht.begin();
 
@@ -94,16 +83,9 @@ void setup() {
   Serial.println("MICROPHONE READY");
   Serial.println("ELECHOUSE VOICE V3.1 READY");
   Serial.println("SD CARD REMOVED");
+  Serial.println("BUZZER REMOVED");
 
   Serial.println();
-  Serial.println("BUZZER RULES:");
-  Serial.println("PIR MOTION -> NO BUZZER");
-  Serial.println("MIC SOUND -> BUZZER");
-  Serial.println("DISTANCE < 15cm -> CONTINUOUS BUZZER");
-  Serial.println("DISTANCE 15-30cm -> FAST BEEP");
-  Serial.println("DISTANCE 30-50cm -> SLOW BEEP");
-  Serial.println();
-
   Serial.println("Waiting for commands...");
   Serial.println();
 }
@@ -191,12 +173,6 @@ void checkVoiceRecognition() {
     Serial.print(" -> DATA: ");
 
     Serial.println(data);
-
-    // Voice module detected something
-    // This DOES cause a buzzer beep.
-    Serial.println("BUZZER: VOICE EVENT");
-
-    tone(BUZZER_PIN, 1000, 100);
   }
 }
 
@@ -221,7 +197,7 @@ void sendTelemetry() {
     (digitalRead(FLAME_PIN) == LOW);
 
   // =================================================
-  // MQ2 GAS
+  // MQ2 GAS SENSOR
   // =================================================
 
   int gasVal =
@@ -261,87 +237,6 @@ void sendTelemetry() {
 
     distanceCm =
       duration * 0.034 / 2;
-  }
-
-  // =================================================
-  // BUZZER SYSTEM
-  //
-  // IMPORTANT:
-  // PIR DOES NOT CONTROL BUZZER
-  // =================================================
-
-  unsigned long currentTime = millis();
-
-  // -------------------------------------------------
-  // PRIORITY 1: MICROPHONE
-  // -------------------------------------------------
-
-  if (micVal > MIC_THRESHOLD) {
-
-    Serial.println("BUZZER: MICROPHONE SOUND");
-
-    tone(BUZZER_PIN, 1300, 250);
-
-    lastBuzzerTime = currentTime;
-  }
-
-  // -------------------------------------------------
-  // PRIORITY 2: ULTRASONIC
-  // -------------------------------------------------
-
-  else {
-
-    // -----------------------------------------------
-    // Object < 15 cm
-    // -----------------------------------------------
-
-    if (distanceCm < 15) {
-
-      Serial.println("BUZZER: OBJECT < 15 CM");
-
-      tone(BUZZER_PIN, 1500);
-    }
-
-    // -----------------------------------------------
-    // Object 15-30 cm
-    // -----------------------------------------------
-
-    else if (distanceCm < 30) {
-
-      if (currentTime - lastBuzzerTime >= 500) {
-
-        Serial.println("BUZZER: OBJECT 15-30 CM");
-
-        tone(BUZZER_PIN, 1200, 150);
-
-        lastBuzzerTime = currentTime;
-      }
-    }
-
-    // -----------------------------------------------
-    // Object 30-50 cm
-    // -----------------------------------------------
-
-    else if (distanceCm < 50) {
-
-      if (currentTime - lastBuzzerTime >= 1000) {
-
-        Serial.println("BUZZER: OBJECT 30-50 CM");
-
-        tone(BUZZER_PIN, 1000, 100);
-
-        lastBuzzerTime = currentTime;
-      }
-    }
-
-    // -----------------------------------------------
-    // Object > 50 cm
-    // -----------------------------------------------
-
-    else {
-
-      noTone(BUZZER_PIN);
-    }
   }
 
   // =================================================
@@ -411,21 +306,10 @@ void sendTelemetry() {
 void handleIncomingCommand(String cmd) {
 
   // -------------------------------------------------
-  // BUZZER TEST
-  // -------------------------------------------------
-
-  if (cmd == "TEST_BUZZER") {
-
-    tone(BUZZER_PIN, 1000, 500);
-
-    Serial.println("BUZZER TEST");
-  }
-
-  // -------------------------------------------------
   // READ SENSORS
   // -------------------------------------------------
 
-  else if (cmd == "READ_SENSORS") {
+  if (cmd == "READ_SENSORS") {
 
     sendTelemetry();
   }
@@ -437,8 +321,6 @@ void handleIncomingCommand(String cmd) {
   else if (cmd == "VOICE_TEST") {
 
     Serial.println("VOICE MODULE TEST");
-
-    tone(BUZZER_PIN, 1500, 200);
   }
 
   // -------------------------------------------------
