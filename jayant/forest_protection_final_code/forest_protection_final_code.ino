@@ -49,6 +49,16 @@ SoftwareSerial voice(2, 3);
 unsigned long startTime = 0;
 
 // =================================================
+// BUZZER CONTROL
+// =================================================
+
+unsigned long lastBuzzerTime = 0;
+
+// Microphone threshold
+// Increase this if the buzzer reacts too easily
+#define MIC_THRESHOLD 600
+
+// =================================================
 // SETUP
 // =================================================
 
@@ -79,6 +89,7 @@ void setup() {
   Serial.println("================================");
   Serial.println("A.E.G.I.S. FOREST PROTECTION");
   Serial.println("================================");
+
   Serial.println("DHT11 READY");
   Serial.println("PIR READY");
   Serial.println("FLAME SENSOR READY");
@@ -104,7 +115,6 @@ void loop() {
   if (Serial.available()) {
 
     String cmd = Serial.readStringUntil('\n');
-
     cmd.trim();
 
     handleIncomingCommand(cmd);
@@ -157,12 +167,14 @@ void checkVoiceRecognition() {
       Serial.print("0");
 
     Serial.print(hours);
+
     Serial.print(":");
 
     if (minutes < 10)
       Serial.print("0");
 
     Serial.print(minutes);
+
     Serial.print(":");
 
     if (secs < 10)
@@ -174,6 +186,7 @@ void checkVoiceRecognition() {
 
     Serial.println(data);
 
+    // Voice module detected something
     tone(BUZZER_PIN, 1000, 100);
   }
 }
@@ -199,7 +212,7 @@ void sendTelemetry() {
     (digitalRead(FLAME_PIN) == LOW);
 
   // -----------------------------
-  // MQ2
+  // MQ2 GAS
   // -----------------------------
 
   int gasVal =
@@ -212,34 +225,14 @@ void sendTelemetry() {
   int micVal =
     analogRead(MIC_ANALOG_PIN);
 
-  // -----------------------------
-  // DHT11
-  // -----------------------------
-
-  float temperature =
-    dht.readTemperature();
-
-  float humidity =
-    dht.readHumidity();
-
-  if (isnan(temperature) || isnan(humidity)) {
-
-    Serial.println("DHT ERROR");
-
-    temperature = -1;
-    humidity = -1;
-  }
-
-  // -----------------------------
+  // =================================================
   // ULTRASONIC
-  // -----------------------------
+  // =================================================
 
   digitalWrite(TRIG_PIN, LOW);
-
   delayMicroseconds(2);
 
   digitalWrite(TRIG_PIN, HIGH);
-
   delayMicroseconds(10);
 
   digitalWrite(TRIG_PIN, LOW);
@@ -260,34 +253,119 @@ void sendTelemetry() {
   }
 
   // =================================================
+  // BUZZER SYSTEM
+  // MICROPHONE + ULTRASONIC
+  // =================================================
+
+  unsigned long currentTime = millis();
+
+  // -------------------------------------------------
+  // PRIORITY 1: MICROPHONE
+  // -------------------------------------------------
+
+  if (micVal > MIC_THRESHOLD) {
+
+    tone(BUZZER_PIN, 1300, 250);
+
+    lastBuzzerTime = currentTime;
+  }
+
+  // -------------------------------------------------
+  // PRIORITY 2: ULTRASONIC
+  // -------------------------------------------------
+
+  else {
+
+    // Object extremely close
+    if (distanceCm < 15) {
+
+      tone(BUZZER_PIN, 1500);
+    }
+
+    // Object 15-30 cm away
+    else if (distanceCm < 30) {
+
+      if (currentTime - lastBuzzerTime >= 500) {
+
+        tone(BUZZER_PIN, 1200, 150);
+
+        lastBuzzerTime = currentTime;
+      }
+    }
+
+    // Object 30-50 cm away
+    else if (distanceCm < 50) {
+
+      if (currentTime - lastBuzzerTime >= 1000) {
+
+        tone(BUZZER_PIN, 1000, 100);
+
+        lastBuzzerTime = currentTime;
+      }
+    }
+
+    // Object more than 50 cm away
+    else {
+
+      noTone(BUZZER_PIN);
+    }
+  }
+
+  // =================================================
+  // DHT11
+  // =================================================
+
+  float temperature =
+    dht.readTemperature();
+
+  float humidity =
+    dht.readHumidity();
+
+  if (isnan(temperature) ||
+      isnan(humidity)) {
+
+    Serial.println("DHT ERROR");
+
+    temperature = -1;
+    humidity = -1;
+  }
+
+  // =================================================
   // MACHINE-READABLE TELEMETRY
   // =================================================
 
   Serial.print("TELEMETRY:");
 
   Serial.print(",PIR:");
+
   Serial.print(
     pirMotion ? "MOTION" : "CLEAR"
   );
 
   Serial.print(",FLAME:");
+
   Serial.print(
     flameDetected ? "FIRE" : "CLEAR"
   );
 
   Serial.print(",GAS:");
+
   Serial.print(gasVal);
 
   Serial.print(",MIC:");
+
   Serial.print(micVal);
 
   Serial.print(",DIST:");
+
   Serial.print(distanceCm);
 
   Serial.print(",TEMP:");
+
   Serial.print(temperature, 1);
 
   Serial.print(",HUM:");
+
   Serial.print(humidity, 1);
 
   Serial.println();
@@ -299,6 +377,10 @@ void sendTelemetry() {
 
 void handleIncomingCommand(String cmd) {
 
+  // -----------------------------
+  // BUZZER TEST
+  // -----------------------------
+
   if (cmd == "TEST_BUZZER") {
 
     tone(BUZZER_PIN, 1000, 500);
@@ -306,10 +388,18 @@ void handleIncomingCommand(String cmd) {
     Serial.println("BUZZER TEST");
   }
 
+  // -----------------------------
+  // READ SENSORS
+  // -----------------------------
+
   else if (cmd == "READ_SENSORS") {
 
     sendTelemetry();
   }
+
+  // -----------------------------
+  // VOICE TEST
+  // -----------------------------
 
   else if (cmd == "VOICE_TEST") {
 
@@ -318,18 +408,28 @@ void handleIncomingCommand(String cmd) {
     tone(BUZZER_PIN, 1500, 200);
   }
 
+  // -----------------------------
+  // MIC TEST
+  // -----------------------------
+
   else if (cmd == "MIC_TEST") {
 
     int micValue =
       analogRead(MIC_ANALOG_PIN);
 
     Serial.print("MIC:");
+
     Serial.println(micValue);
   }
+
+  // -----------------------------
+  // UNKNOWN COMMAND
+  // -----------------------------
 
   else {
 
     Serial.print("UNKNOWN COMMAND: ");
+
     Serial.println(cmd);
   }
 }
