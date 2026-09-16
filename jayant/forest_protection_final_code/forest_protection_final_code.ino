@@ -2,20 +2,6 @@
 #include <DHT.h>
 
 // ============================================================
-// FOREST PROTECTION & REDUCE ANIMAL HUNTING
-// Arduino UNO Controller
-//
-// BUZZER: REMOVED
-// SD CARD: REMOVED
-//
-// Dashboard communication:
-//   TELEMETRY:
-//   AUDIO:
-//   EVENT:
-// ============================================================
-
-
-// ============================================================
 // PIN DEFINITIONS
 // ============================================================
 
